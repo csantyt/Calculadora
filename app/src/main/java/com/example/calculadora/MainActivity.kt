@@ -1,80 +1,116 @@
 package com.example.calculadora
 
-import android.icu.text.DecimalFormat
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
-    val SUMA = "+"
-    val RESTA = "-"
-    val MULTIPLICACION = "*"
-    val DIVISION = "/"
-    val PORCENTAJE = "%"
 
-    var operacionActual = ""
-    var primerNumero: Double = Double.NaN
-    var segundoNumero: Double = Double.NaN
+    private lateinit var tvResult: TextView
+    private lateinit var tvTemp: TextView
 
-    lateinit var tvTemp: TextView
-    lateinit var tvResult: TextView
-
-    lateinit var formatoDecimal: DecimalFormat
+    private var operador: String? = null
+    private var numeroAnterior: String = ""
+    private var nuevoNumero: String = ""
+    private var resultadoMostrado = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
-        formatoDecimal = DecimalFormat("#.##########")
-        tvTemp = findViewById(R.id.tvTemp)
         tvResult = findViewById(R.id.tvResult)
+        tvTemp = findViewById(R.id.tvTemp)
     }
 
-    fun cambiarOperador(b: View) {
-        val boton: Button = b as Button
-        operacionActual = when (boton.text.toString().trim()) {
-            "÷" -> "/"
-            "x" -> "*"
-            else -> boton.text.toString().trim()
-        }
-    }
+    fun seleccionarNumero(view: View) {
+        val button = view as Button
+        val numero = button.text.toString()
 
-    fun calcular(b: View) {
-        if (!primerNumero.isNaN()) {
-            segundoNumero = tvTemp.text.toString().toDoubleOrNull() ?: 0.0
-            tvTemp.text = ""
-
-            primerNumero = when (operacionActual) {
-                "+" -> primerNumero + segundoNumero
-                "-" -> primerNumero - segundoNumero
-                "*" -> primerNumero * segundoNumero
-                "/" -> if (segundoNumero != 0.0) primerNumero / segundoNumero else Double.NaN
-                "%" -> primerNumero % segundoNumero
-                else -> primerNumero
-            }
-
-            tvResult.text = formatoDecimal.format(primerNumero)
+        // Si se mostró un resultado o hay un solo 0, se reemplaza
+        if (resultadoMostrado || tvResult.text.toString() == "0") {
+            tvResult.text = numero
+            resultadoMostrado = false
         } else {
-            primerNumero = tvTemp.text.toString().toDoubleOrNull() ?: 0.0
+            tvResult.append(numero)
         }
     }
 
-    fun seleccionarNumero(b: View) {
-        val boton: Button = b as Button
-        if (tvTemp.text.toString() == "0") {
-            tvTemp.text = ""
+    fun seleccionarDecimal(view: View) {
+        if (resultadoMostrado) {
+            tvResult.text = "0."
+            resultadoMostrado = false
+        } else if (!tvResult.text.contains(".")) {
+            if (tvResult.text.isEmpty()) {
+                tvResult.text = "0."
+            } else {
+                tvResult.append(".")
+            }
         }
-        tvTemp.append(boton.text.toString())
+    }
+
+    fun cambiarOperador(view: View) {
+        val button = view as Button
+        val simbolo = button.text.toString()
+
+        // Convertimos símbolos visuales a operadores reales
+        operador = when (simbolo) {
+            "+" -> "+"
+            "-" -> "-"
+            "x" -> "*"
+            "÷" -> "/"
+            "%" -> "%"
+            else -> {
+                tvResult.text = "Op. Inv"
+                return
+            }
+        }
+
+        if (tvResult.text.isNotEmpty()) {
+            numeroAnterior = tvResult.text.toString()
+            tvTemp.text = "$numeroAnterior $simbolo"
+            tvResult.text = ""
+        }
+    }
+
+
+    fun igual(view: View) {
+        if (operador == null || tvResult.text.isEmpty()) return
+
+        nuevoNumero = tvResult.text.toString()
+        val resultado = operar(numeroAnterior, nuevoNumero, operador!!)
+        tvResult.text = resultado
+        tvTemp.text = "$numeroAnterior $operador $nuevoNumero"
+        resultadoMostrado = true
+    }
+
+    fun limpiar(view: View) {
+        tvResult.text = ""
+        tvTemp.text = ""
+        operador = null
+        numeroAnterior = ""
+        nuevoNumero = ""
+        resultadoMostrado = false
+    }
+
+    fun borrarUltimo(view: View) {
+        val texto = tvResult.text.toString()
+        if (texto.isNotEmpty()) {
+            tvResult.text = texto.dropLast(1)
+        }
+    }
+
+    private fun operar(num1: String, num2: String, op: String): String {
+        val n1 = num1.toDoubleOrNull() ?: return "Error"
+        val n2 = num2.toDoubleOrNull() ?: return "Error"
+        val resultado = when (op) {
+            "+" -> n1 + n2
+            "-" -> n1 - n2
+            "*" -> n1 * n2
+            "/" -> if (n2 != 0.0) n1 / n2 else return "Div/0"
+            else -> return "Op. Inv"
+        }
+        return if (resultado % 1 == 0.0) resultado.toInt().toString() else resultado.toString()
     }
 }

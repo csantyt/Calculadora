@@ -6,6 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/white"
     tools:context=".MainActivity">
 
     <TextView
@@ -15,7 +17,8 @@
         android:layout_gravity="end"
         android:text="0"
         android:textAlignment="textEnd"
-        android:textSize="34sp" />
+        android:textSize="34sp"
+        android:textColor="@color/black" />
 
     <TextView
         android:id="@+id/tvResult"
@@ -24,7 +27,8 @@
         android:layout_gravity="end"
         android:text="0"
         android:textAlignment="textEnd"
-        android:textSize="60sp" />
+        android:textSize="60sp"
+        android:textColor="@color/black" />
 
     <include
         layout="@layout/buttoms_layout"
